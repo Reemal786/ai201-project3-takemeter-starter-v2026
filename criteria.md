@@ -51,63 +51,53 @@ whether you hit them:
 
 ---
 
-## 1.
+## 1. Overall Classification Accuracy
 
-<!-- Your criterion. It must name a number. -->
-
-
+The trained model must achieve an overall accuracy of at least **65%** on the held-out test set for each of the three training seeds.
 
 **Why this target:**
 
-
+With three categories (`question`, `opinion`, and `information`), random guessing on a balanced dataset would achieve approximately 33% accuracy. A target of 65% would demonstrate that the model can identify meaningful differences in how users communicate within r/gaming.
 
 ---
 
-## 2.
+## 2. Macro F1 Score
 
-<!-- Your criterion. -->
-
-
+The trained model must achieve a macro F1 score of at least **0.60** for each of the three training seeds.
 
 **Why this target:**
 
-
+The three categories may not occur equally often in r/gaming. Macro F1 evaluates each label equally, helping ensure the model performs reasonably across questions, opinions, and informational posts rather than favoring the most common category.
 
 ---
 
-## 3.
+## 3. Per-Label Performance
 
-<!-- Your criterion. -->
-
-
+Each label (`question`, `opinion`, and `information`) must achieve an F1 score of at least **0.50** on the held-out test set for each training seed.
 
 **Why this target:**
 
-
+Some gaming posts may contain both factual information and personal opinions, making these categories difficult to distinguish. With approximately 200 posts divided among three labels, each category will also have relatively few test examples. A minimum F1 of 0.50 accounts for these challenges while requiring the model to recognize all three categories.
 
 ---
 
-## 4.
+## 4. Dataset Balance
 
-<!-- Your criterion. -->
-
-
+No individual label may represent more than **50%** of the complete labeled dataset.
 
 **Why this target:**
 
-
+r/gaming includes different types of discussions, but questions and opinions may be more common than informational posts. Limiting any single category to 50% helps ensure the model receives sufficient examples of all three labels during training.
 
 ---
 
-## 5.
+## 5. Training Consistency
 
-<!-- Your criterion. -->
-
-
+The difference between the highest and lowest overall test accuracy across training seeds 42, 7, and 2024 must be no greater than **10 percentage points**.
 
 **Why this target:**
 
-
+Training on a relatively small dataset can produce different results depending on the random seed. A maximum variation of 10 percentage points provides a measurable standard for determining whether the classifier performs consistently across repeated training runs.
 
 ---
 
@@ -136,7 +126,7 @@ whether you hit them:
      you the point:
 
          ✗ "Overall accuracy of at least 0.65" → "at least 0.55", because
-            0.65 turned out to be optimistic for 200 examples.
+           0.65 turned out to be optimistic for 200 examples.
 
      A number you missed stays where it is, gets diagnosed, and gets a fix
      attempted. That's where the points are.
