@@ -1,324 +1,194 @@
+
 # TakeMeter
 
-> ### 👋 Start here
+> **New to this repository?** Start with [RUNNING.md](RUNNING.md) for environment setup, notebook instructions, baseline evaluation, and troubleshooting.
 >
-> **New to this repo? Read [RUNNING.md](RUNNING.md) first** — setup, the
-> notebook, the baseline, and what to do when something breaks.
->
-> Once `python test.py` passes:
->
-> ```bash
-> head -5 data/practice_labels.csv     # the shape your labels.csv needs
-> ```
->
-> Then open `takemeter.ipynb` **in this folder** — in VS Code, or with
-> `jupyter notebook` if you prefer. Pick the kernel: the `.venv` inside this
-> project. Run section 1, which reports the hardware you'll be training on.
-> Everything else waits until you have data.
->
-> Nothing to upload, nothing to connect, no accounts and no keys. The notebook
-> runs on your machine and writes next to your code.
->
-> **The rest of this file is your submission.** Fill it in as you go.
+> After `python test.py` passes, open `takemeter.ipynb` in this repository with the project's `.venv` kernel. Training and evaluation run locally and write output files alongside the notebook.
 
 ---
 
-<!-- ─────────────────────────────────────────────────────────────────────────
-     HOW TO USE THIS FILE
-
-     Unit 5 asks for the first five sections. Unit 6 adds the five below them.
-
-     Everything is pasted as TEXT. No screenshots, no images.
-
-     ⚠️ The confusion matrix especially. The notebook prints one as a markdown
-     table, ready to copy. A screenshot of a matrix earns nothing. Paste the
-     table.
-     ───────────────────────────────────────────────────────────────────────── -->
-
-<!-- ═══════════════════════ UNIT 5 — THE BUILD ═══════════════════════ -->
+<!-- UNIT 5 — THE BUILD -->
 
 ## What This Does
 
-<!-- Your community, and what your classifier sorts posts into. Three or four
-     sentences. -->
-
-
-
----
+This project develops a text classification model that categorizes posts from the r/gaming subreddit based on their primary purpose. The classifier distinguishes between posts seeking information (`question`), expressing personal judgments or preferences (`opinion`), and sharing gaming-related news or factual information (`information`). By analyzing the language used in each post, the model aims to identify the author's main communicative intent. The project evaluates how reliably these categories can be distinguished using a labeled dataset of gaming discussions.
 
 ## Label Taxonomy
 
-<!-- Each label: a one-sentence definition and two real examples from your
-     reading. Then your decision rule for the hardest boundary.
+### `question`
 
-     The decision rule is worth a point on its own and it's the thing most
-     people leave out. Every taxonomy has a hardest boundary. Name yours. -->
+**Definition:** Primarily requests advice, recommendations, explanations, or information from other users.
 
-### `label_one`
+**Example 1:** [Looking for games with ancient civilisations, lost history, mysterious ruins and secrets to uncover](https://www.reddit.com/r/gaming/comments/1x0l6kw/) — The author describes their gaming preferences and asks for recommendations matching a specific atmosphere.
 
-**Definition:**
+**Example 2:** [Best Website for Gaming News?](https://www.reddit.com/r/gaming/comments/1dq0fzn/) — The author seeks recommendations for reliable gaming news websites.
 
-**Example 1:**
->
+### `opinion`
 
-**Example 2:**
->
+**Definition:** Primarily expresses a personal judgment, preference, criticism, or argument about a gaming-related topic.
 
-### `label_two`
+**Example 1:** [Have gaming discussions gotten more negative in recent years?](https://www.reddit.com/r/gaming/comments/1gifhc5/) — The author argues that gaming discussions have become overly negative.
 
-**Definition:**
+**Example 2:** [First Light is a really great game. I also can't believe it was released in the state it's in.](https://www.reddit.com/r/gaming/comments/1x0i46u/) — The author praises the game's presentation while criticizing its technical problems.
 
-**Example 1:**
->
+### `information`
 
-**Example 2:**
->
+**Definition:** Primarily shares gaming news, updates, announcements, or factual information without making personal judgment the main focus.
+
+**Example 1:** [Skate has been de-live serviced by ReSkate](https://www.reddit.com/r/gaming/comments/1x0iz03/) — The post shares news about a modding platform and its developers' response to potential legal action.
+
+**Example 2:** Cyberpunk 2077 expansions are still in development, CD Projekt confirms — The post reports an official update from CD Projekt about planned expansions and downloadable content for Cyberpunk 2077, making its primary purpose informational.
 
 ### The hardest boundary
 
-**Which two labels:**
+**Which two labels:** `opinion` and `information`.
 
-**The decision rule I used every time:**
-<!-- e.g. "If the post names a specific checkable fact, it's `analysis`, even
-     if the tone is heated." -->
-
-
-
----
+**Decision rule:** If a post primarily reports gaming news, announcements, or verifiable information, classify it as `information`, even when it includes minor commentary. If the post primarily evaluates, praises, criticizes, or argues about a gaming-related topic, classify it as `opinion`, even when factual details are used as supporting evidence.
 
 ## The Dataset
 
-<!-- Where you collected from, how you labelled, your counts, and three hard
-     cases. -->
+**Where the posts came from:** I collected 200 gaming-related Reddit posts from the Hugging Face dataset [`sentence-transformers/reddit-title-body`](https://huggingface.co/datasets/sentence-transformers/reddit-title-body), using posts from r/gaming. The source corpus contains Reddit titles and bodies; I combined the relevant text into one `text` field for classification. My collection script is `collect_posts.py`.
 
-**Where the posts came from:**
-
-**How I labelled them:** <!-- Cold first? Pre-labelled with AI and corrected?
-Say so plainly — the disclosure is required, not penalised. -->
+**How I labeled them:** I used rule-based pre-labeling to create initial labels and AI-assisted suggestions to identify cases needing review. I examined the suggested labels against my taxonomy, corrected classifications based on each post's primary purpose, and finalized the labels in `labels.csv`. For the 20 posts I specifically reviewed with AI suggestions, I evaluated the proposed labels and made the final decisions rather than treating the suggestions as automatically correct. I also checked the finished dataset for missing text, missing labels and notes, duplicate posts, invalid labels, and empty fields; all checks passed. AI assistance is disclosed in more detail below.
 
 **Counts per label:**
 
 | Label | Count | Share |
-|---|---|---|
-|  |  |  |
-|  |  |  |
-|  |  |  |
-| **Total** |  | 100% |
+|---|---:|---:|
+| `question` | 128 | 64% |
+| `opinion` | 60 | 30% |
+| `information` | 12 | 6% |
+| **Total** | **200** | **100%** |
 
-**Three hard cases**
+The largest category is below the assignment's 70% limit. The small `information` category is an important limitation for model training and evaluation.
 
-<!-- Any post that made you pause: what it was, which two labels it could have
-     been, and what you chose. These are worth more than the easy 190. -->
+### Three hard cases
 
-**1.**
-> *The post:*
->
-> *Could have been:*
->
-> *I chose, because:*
+**1. “What superhero game would you love to see”**
 
-**2.**
-> *The post:*
->
-> *Could have been:*
->
-> *I chose, because:*
+- **Could have been:** `question` or `opinion`.
+- **I chose:** `question`. The body includes the author's preferences about superhero games, but the central purpose is to invite other users to name the games they want.
 
-**3.**
-> *The post:*
->
-> *Could have been:*
->
-> *I chose, because:*
+**2. “I want to know your thoughts on games with Engagement/Skill based matchmaking”**
 
----
+- **Could have been:** `question` or `opinion`.
+- **I chose:** `opinion`. Despite the title asking for thoughts, the author develops a clear argument against skill-based matchmaking; the argument is the main point of the post.
+
+**3. “Childhood story! (first post here)”**
+
+- **Could have been:** `opinion` or `information`.
+- **I chose:** `opinion`. The author recounts a personal gaming experience and emphasizes its emotional significance rather than primarily reporting gaming news or a general factual update. This is an imperfect fit within a three-label taxonomy, but it is closer to personal expression than to the `information` definition.
 
 ## The Training Run
 
-<!-- Your starting model, your settings, and anything you changed and why. -->
+**Base model:** `distilbert-base-uncased`, fine-tuned for three-class sequence classification.
 
-**Base model:**
+**Settings:**
 
-**Settings:** <!-- epochs, learning rate, batch size, seed -->
+| Parameter | Value |
+|---|---|
+| Epochs | 3 |
+| Learning rate | `2e-5` |
+| Batch size | 16 |
+| Maximum sequence length | 128 tokens |
+| Random seed | 42 |
+| Device | CPU |
+| PyTorch version | `2.14.1+cpu` |
 
-**Anything I changed from the defaults, and why:**
+**Anything I changed from the defaults, and why:** I replaced the notebook's placeholder label names with `question`, `opinion`, and `information` to match my dataset. I retained the supplied base model and default training hyperparameters for this first run.
 
-**Split sizes:** <!-- train / val / test, and per-label counts in the test
-split. If a label had fewer than about 8 in test, say so — it explains a lot
-of next unit's variance. -->
+**Split sizes:** Stratified train/validation/test split (approximately 70%/15%/15%).
 
+| Label | Train | Validation | Test |
+|---|---:|---:|---:|
+| `question` | 89 | 20 | 19 |
+| `opinion` | 42 | 9 | 9 |
+| `information` | 8 | 2 | 2 |
+| **Total** | **139** | **31** | **30** |
 
+Only two `information` posts were in the test split, so performance metrics for that category are especially sensitive to individual predictions.
 
----
+**Initial held-out test results (seed 42):**
+
+| Measure | Result |
+|---|---:|
+| Accuracy | 63.3% |
+| Macro F1 | 0.259 |
+| `question` F1 | 0.776 |
+| `opinion` F1 | 0.000 |
+| `information` F1 | 0.000 |
+
+The model appears to have predicted `question` for all 30 test posts: the accuracy equals the fraction of test posts that are questions (19/30), and the other two categories have F1 scores of zero. This is a limitation of the initial model, not evidence that it can reliably distinguish all three intents. The evaluation outputs are saved in `results.json` and `test_split.csv`.
 
 ## How I Used AI
 
-<!-- Two specific moments — what you asked, what came back, what you changed.
+**Moment 1 — Reviewing ambiguous labels**
 
-     ⚠️ Plus disclosure of any pre-labelling. If you had a model pre-label a
-     batch and then read and corrected every one, say that. It's an allowed
-     workflow and disclosing it costs you nothing. Not disclosing it is the
-     problem. -->
+- **What I asked for:** Help assessing posts whose initial labels might not match the definitions of `question`, `opinion`, and `information`.
+- **What came back:** Suggested labels and explanations based on whether a post primarily requested a response, expressed a judgment, or reported facts.
+- **What I changed:** I compared suggestions against the actual post text and taxonomy and corrected misclassified entries in `labels.csv`. I did not automatically accept every suggestion; for example, I kept the matchmaking post as `opinion` despite an AI suggestion of `question`.
 
-**Moment 1**
+**Moment 2 — Checking dataset quality and preparing evaluation**
 
-- *What I asked for:*
-- *What came back:*
-- *What I changed:*
+- **What I asked for:** Help checking dataset completeness, label distribution, and the notebook's training and evaluation workflow.
+- **What came back:** Commands to check for missing values, duplicates, invalid labels, and empty fields, along with guidance on the notebook's setup, split, training, and results sections.
+- **What I changed:** I ran the validation checks locally, configured the notebook to use my actual three labels, and executed training and evaluation. The checks found no structural problems, and the model's weak performance on `opinion` and `information` remained visible in the reported results.
 
-**Moment 2**
-
-- *What I asked for:*
-- *What came back:*
-- *What I changed:*
-
-**Pre-labelling disclosure:**
-
-<!-- ═══════════════════════ UNIT 6 — THE TEST ═══════════════════════
-
-     Don't fill these in during unit 5.
-     ═══════════════════════════════════════════════════════════════════ -->
+**Pre-labeling disclosure:** The initial dataset labels were produced with rule-based automation, and AI-generated label suggestions were used during review. I reviewed and corrected labels using my taxonomy, including 20 posts for which I assessed AI suggestions and made the final labeling decisions. The dataset was not independently hand-labeled from scratch, and I am not presenting AI-suggested labels as unaided human annotations.
 
 ---
+
+<!-- UNIT 6 — THE TEST. Leave these sections for Unit 6. -->
 
 ## Baseline vs. Trained
 
-<!-- Both models on the same posts. `python baseline.py --trained results.json`
-     prints this table for you. -->
-
 | Measure | Baseline | Trained | Difference |
 |---|---|---|---|
-| Overall accuracy |  |  |  |
-| Macro F1 |  |  |  |
-| F1 — `label_one` |  |  |  |
-| F1 — `label_two` |  |  |  |
+| Overall accuracy | | | |
+| Macro F1 | | | |
+| F1 — `question` | | | |
+| F1 — `opinion` | | | |
+| F1 — `information` | | | |
 
 **What I predicted before I looked:**
-<!-- Milestone 1 asks you to write this BEFORE seeing the trained numbers. A
-     prediction made afterwards isn't one. -->
 
 **What the gap actually means:**
-<!-- If the baseline matched your trained model, your fine-tuning added
-     nothing — and that is a real finding, not a failure. Say it plainly. -->
-
-
-
----
 
 ## Run Log — Before
 
-<!-- Five criteria across three seeds. The notebook's section 6 prints the
-     spread table; the Target and Verdict columns are yours. -->
-
 | Criterion | Target | Seed 42 | Seed 7 | Seed 2024 | Verdict |
 |---|---|---|---|---|---|
-| 1.  |  |  |  |  |  |
-| 2.  |  |  |  |  |  |
-| 3.  |  |  |  |  |  |
-| 4.  |  |  |  |  |  |
-| 5.  |  |  |  |  |  |
+| 1. | | | | | |
+| 2. | | | | | |
+| 3. | | | | | |
+| 4. | | | | | |
+| 5. | | | | | |
 
 ### Confusion matrix
 
-<!-- ⚠️ TYPED AS A MARKDOWN TABLE. The notebook prints one ready to paste.
-     An image of a matrix earns nothing. -->
-
-| true \ predicted |  |  |  |
-|---|---|---|---|
-| **** |  |  |  |
-| **** |  |  |  |
-| **** |  |  |  |
+*Paste the notebook's Markdown confusion matrix table here during Unit 6. Do not use a screenshot.*
 
 **My biggest off-diagonal number, and what it means:**
-<!-- Not "the model made mistakes" — WHICH boundary it didn't learn, and which
-     direction. "7 real analysis posts were called hot_take and only 3 went the
-     other way" is a direction, not just an error rate. -->
-
-
-
----
 
 ## Verdicts and Diagnoses
 
-<!-- MET or MISSED against LAST UNIT's target. The target has to hold across
-     all three seeds, not turn up sometimes. -->
-
 | # | Criterion | Target | Verdict | How I decided |
 |---|---|---|---|---|
-| 1 |  |  |  |  |
-| 2 |  |  |  |  |
-| 3 |  |  |  |  |
-| 4 |  |  |  |  |
-| 5 |  |  |  |  |
+| 1 | | | | |
+| 2 | | | | |
+| 3 | | | | |
+| 4 | | | | |
+| 5 | | | | |
 
-**Diagnoses**
-
-<!-- For each miss: the cause, and how you know. The four common causes are:
-     too few examples for a label, a boundary you applied inconsistently, a
-     genuinely hard label pair, and a task the model can't reach from this
-     much data.
-
-     ⚠️ Use your agreement report as evidence. It is the only instrument you
-     have that can tell a LABELLING problem from a MODEL problem, and this
-     section is graded on whether you used it that way. -->
-
-
-
----
+**Diagnoses:**
 
 ## Agreement Report
 
-<!-- Your rate against the staff set, and every disagreement adjudicated.
-
-     Remember you labelled these 30 under the STAFF taxonomy in
-     data/staff_taxonomy.md, not your own — so every argument below is made
-     from those definitions and those decision rules. -->
-
 **Agreement rate:** ___ / 30 = ___%
 
-<!-- Nobody grades this number. A 60% who argues every disagreement from the
-     stated rules beats a 95% who wrote "staff was right" nine times. Several
-     of the 30 were chosen because they're genuinely ambiguous — you should be
-     winning some of these. -->
-
-**Disagreements**
-
-<!-- Three lines each: the post, both labels, and who you think is right and
-     why — grounded in the staff definitions you were both applying.
-
-     Then sort each into one of three piles:
-       (a) the rule covered it and I applied it loosely → a consistency problem
-       (b) the rule genuinely doesn't say               → a gap in the definitions
-       (c) the rule is ambiguous here and my reading is defensible → argue it.
-           This is a legitimate win.
-
-     Pile (a) is the one that matters most for your diagnosis: if you applied a
-     written rule two different ways on 30 posts, that is direct evidence about
-     what you did across your own 200. -->
-
-**1.**
-> *The post:*
->
-> *Staff said / I said:*
->
-> *My call, and why:*
->
-> *Which pile:*
-
-**2.**
-> *The post:*
->
-> *Staff said / I said:*
->
-> *My call, and why:*
->
-> *Which pile:*
+**Disagreements:** For each disagreement, document the post, the staff label, your label, your reasoning under the staff taxonomy, and whether the issue was inconsistent application, a gap in the definitions, or a defensible ambiguous interpretation.
 
 **What the pattern in my disagreements tells me:**
-
-
-
----
 
 ## The Improvement
 
@@ -330,67 +200,43 @@ of next unit's variance. -->
 
 | Criterion | Target | Seed 42 | Seed 7 | Seed 2024 | Verdict |
 |---|---|---|---|---|---|
-| 1.  |  |  |  |  |  |
-| 2.  |  |  |  |  |  |
-| 3.  |  |  |  |  |  |
-| 4.  |  |  |  |  |  |
-| 5.  |  |  |  |  |  |
+| 1. | | | | | |
+| 2. | | | | | |
+| 3. | | | | | |
+| 4. | | | | | |
+| 5. | | | | | |
 
 **Did it help, and how do I know:**
 
-<!-- If it didn't, say so. Relabelling that didn't help is a genuinely
-     interesting result and earns full credit. -->
-
-
-
----
-
 ## What's Still Broken
 
-<!-- For each criterion still missed: what you'd do, and why you stopped. -->
-
-
-
-**The gap between what I meant my labels to capture and what the model
-learned:**
-<!-- Two sentences. Your confusion matrix is the evidence. -->
-
-
-
-<!-- ═════════════════════════════════════════════════════════════════════
-
-     SUBMISSION CHECKLIST — unit 5
-
-       [ ] criteria.md has five numbered criteria, each naming a NUMBER
-       [ ] Each has a reason underneath tied to your data or taxonomy
-       [ ] labels.csv: at least 150 rows, text/label/note, ONE file not split
-       [ ] No label above 70%
-       [ ] All five unit 5 sections have real content
-       [ ] Label Taxonomy includes the decision rule for your hardest boundary
-       [ ] The Dataset includes three hard cases
-       [ ] results.json and test_split.csv committed (the notebook does this)
-       [ ] At least four new commits
-       [ ] Repository URL submitted — WRITE IT DOWN
-
-     SUBMISSION CHECKLIST — unit 6
-
-       [ ] Baseline vs. Trained table, with your prediction written beforehand
-       [ ] Run Log — Before, five criteria across three seeds
-       [ ] Confusion matrix TYPED AS A MARKDOWN TABLE
-       [ ] A verdict on every criterion
-       [ ] A diagnosis for every miss, using the agreement report as evidence
-       [ ] Agreement Report with every disagreement adjudicated
-       [ ] One improvement, with Run Log — After
-       [ ] What's Still Broken
-       [ ] results_three_seeds_before.json, results_three_seeds_after.json,
-           baseline_results.json and
-           agreement_results.json committed
-       [ ] At least four new commits
-       [ ] The SAME repository URL as last unit
-
-     Do not delete and recreate this repository.
-     ═════════════════════════════════════════════════════════════════════ -->
+**The gap between what I meant my labels to capture and what the model learned:**
 
 ---
 
-📖 **How to run this project: [RUNNING.md](RUNNING.md)**
+<!-- SUBMISSION CHECKLIST — UNIT 5
+[ ] criteria.md has five numbered measurable criteria, each with a reason
+[ ] labels.csv has at least 150 rows and text/label/note columns
+[ ] No label exceeds 70% of the dataset
+[ ] All five Unit 5 README sections are complete
+[ ] Label Taxonomy includes the hardest-boundary decision rule
+[ ] The Dataset includes three hard cases
+[ ] results.json and test_split.csv are committed
+[ ] At least four new commits
+[ ] Submit the repository URL
+
+SUBMISSION CHECKLIST — UNIT 6
+[ ] Baseline vs. Trained table and prior prediction
+[ ] Three-seed Run Log — Before
+[ ] Typed Markdown confusion matrix
+[ ] Criterion verdicts and diagnoses
+[ ] Agreement Report with adjudicated disagreements
+[ ] One improvement and Run Log — After
+[ ] What's Still Broken
+[ ] results_three_seeds_before.json, results_three_seeds_after.json,
+    baseline_results.json, and agreement_results.json committed
+[ ] At least four new commits
+[ ] Submit the same repository URL
+-->
+
+**How to run this project:** [RUNNING.md](RUNNING.md)
