@@ -140,77 +140,143 @@ The model appears to have predicted `question` for all 30 test posts: the accura
 
 <!-- UNIT 6 — THE TEST. Leave these sections for Unit 6. -->
 
+# Unit 6 — The Test
+
 ## Baseline vs. Trained
 
 | Measure | Baseline | Trained | Difference |
 |---|---|---|---|
-| Overall accuracy | | | |
-| Macro F1 | | | |
-| F1 — `question` | | | |
-| F1 — `opinion` | | | |
-| F1 — `information` | | | |
+| Overall accuracy | 0.600 | 0.633 | +0.033 |
+| Macro F1 | 0.414 | 0.259 | -0.155 |
+| F1 — `question` | 0.643 | 0.776 | +0.133 |
+| F1 — `opinion` | 0.600 | 0.000 | -0.600 |
+| F1 — `information` | 0.000 | 0.000 | 0.000 |
 
 **What I predicted before I looked:**
 
+I expected my fine-tuned model to outperform the general baseline in overall accuracy because it was trained specifically on r/gaming posts and my three label definitions, although I anticipated difficulty identifying the underrepresented information category.
+
 **What the gap actually means:**
+
+Fine-tuning increased overall accuracy by 3.3 percentage points, but reduced macro F1 from 0.414 to 0.259. The trained model performed better on the majority `question` category but failed to correctly identify `opinion` and `information` posts.
+
+This suggests that the imbalanced training dataset may have caused the model to favor the majority class rather than learning to distinguish all three categories effectively. The baseline achieved better balanced performance despite having slightly lower overall accuracy.
 
 ## Run Log — Before
 
 | Criterion | Target | Seed 42 | Seed 7 | Seed 2024 | Verdict |
 |---|---|---|---|---|---|
-| 1. | | | | | |
-| 2. | | | | | |
-| 3. | | | | | |
-| 4. | | | | | |
-| 5. | | | | | |
+| 1. Overall accuracy | ≥ 0.65 | 0.633 | 0.633 | 0.633 | NOT MET |
+| 2. Macro F1 | ≥ 0.60 | 0.259 | 0.259 | 0.259 | NOT MET |
+| 3. Per-label F1 | ≥ 0.50 for every label | Not met | Not met | Not met | NOT MET |
+| 4. Dataset balance | No label exceeds 50% | 64% `question` | 64% `question` | 64% `question` | NOT MET |
+| 5. Accuracy stability | Spread ≤ 0.10 | 0.633 | 0.633 | 0.633 | MET |
+
+The accuracy spread across all three seeds was 0.000, indicating consistent results across the tested random seeds.
 
 ### Confusion matrix
 
-*Paste the notebook's Markdown confusion matrix table here during Unit 6. Do not use a screenshot.*
+Rows represent actual labels, and columns represent predicted labels.
+
+| Actual / Predicted | `question` | `opinion` | `information` |
+|---|---|---|---|
+| `question` | 19 | 0 | 0 |
+| `opinion` | 9 | 0 | 0 |
+| `information` | 2 | 0 | 0 |
 
 **My biggest off-diagonal number, and what it means:**
+
+The largest off-diagonal value was 9, representing `opinion` posts incorrectly classified as `question`. The model predicted `question` for every test example, including all 9 `opinion` posts and both `information` posts.
+
+This indicates that the model learned to favor the majority class instead of reliably distinguishing between the three categories.
 
 ## Verdicts and Diagnoses
 
 | # | Criterion | Target | Verdict | How I decided |
 |---|---|---|---|---|
-| 1 | | | | |
-| 2 | | | | |
-| 3 | | | | |
-| 4 | | | | |
-| 5 | | | | |
+| 1 | Overall accuracy | ≥ 0.65 for every seed | NOT MET | Accuracy was 0.633 for all three seeds, below the required 0.65. |
+| 2 | Macro F1 | ≥ 0.60 for every seed | NOT MET | Macro F1 was 0.259 for every seed, indicating poor performance across the three classes. |
+| 3 | Per-label F1 | ≥ 0.50 for every label | NOT MET | `question` achieved 0.776, but `opinion` and `information` both scored 0.000. |
+| 4 | Dataset balance | No label exceeds 50% | NOT MET | `question` accounted for 128 of 200 posts (64%), exceeding the 50% limit. |
+| 5 | Accuracy stability | Spread ≤ 0.10 | MET | All three seeds produced 0.633 accuracy, giving a spread of 0.000. |
 
 **Diagnoses:**
 
+The most significant issue was class imbalance. Of the 200 labeled posts, 128 were `question`, 60 were `opinion`, and only 12 were `information`. This uneven distribution likely encouraged the model to prioritize the majority category.
+
+The confusion matrix supports this diagnosis because the trained model classified every test example as `question`. Although this produced 63.3% accuracy, the model failed to recognize the other two categories.
+
+The difference between accuracy and macro F1 also demonstrates why overall accuracy alone is insufficient for evaluating an imbalanced classification problem. The model achieved reasonable accuracy while performing poorly on two of the three labels.
+
+Finally, the identical results across all three seeds suggest that the majority-class prediction pattern was consistent under the tested training conditions rather than an isolated result from one random seed.
+
 ## Agreement Report
 
-**Agreement rate:** ___ / 30 = ___%
+**Agreement rate:** 30 / 30 = 100%
 
-**Disagreements:** For each disagreement, document the post, the staff label, your label, your reasoning under the staff taxonomy, and whether the issue was inconsistent application, a gap in the definitions, or a defensible ambiguous interpretation.
+**Disagreements:**
+
+There were no disagreements between my labels and the staff labels across the 30 reviewed posts.
 
 **What the pattern in my disagreements tells me:**
+
+The 100% agreement rate suggests that I consistently applied the staff's labeling definitions to the reviewed examples.
+
+However, this agreement does not necessarily mean the full training dataset was perfectly labeled or balanced. The model's poor minority-class performance indicates that consistent labeling alone was not enough to produce effective classification across all three categories.
 
 ## The Improvement
 
 **What I changed:**
 
+For Milestone 5, I increased the model's training duration from 3 epochs to 5 epochs.
+
+I kept the same DistilBERT model, dataset, label definitions, learning rate, batch size, and three random seeds. This allowed me to isolate the effect of additional training on model performance.
+
 **Which diagnosis pointed at it:**
+
+The initial evaluation showed that the model failed to distinguish between the three labels and predicted `question` for every test example.
+
+I wanted to test whether additional training would give the model more opportunities to learn the differences between `question`, `opinion`, and `information` posts.
+
+However, because the dataset remained imbalanced, additional epochs alone might not address the underlying majority-class bias.
 
 ### Run Log — After
 
 | Criterion | Target | Seed 42 | Seed 7 | Seed 2024 | Verdict |
 |---|---|---|---|---|---|
-| 1. | | | | | |
-| 2. | | | | | |
-| 3. | | | | | |
-| 4. | | | | | |
-| 5. | | | | | |
+| 1. Overall accuracy | ≥ 0.65 | 0.633 | 0.633 | 0.633 | NOT MET |
+| 2. Macro F1 | ≥ 0.60 | 0.259 | 0.259 | 0.259 | NOT MET |
+| 3. Per-label F1 | ≥ 0.50 for every label | Not met | Not met | Not met | NOT MET |
+| 4. Dataset balance | No label exceeds 50% | 64% `question` | 64% `question` | 64% `question` | NOT MET |
+| 5. Accuracy stability | Spread ≤ 0.10 | 0.633 | 0.633 | 0.633 | MET |
 
 **Did it help, and how do I know:**
+
+Increasing training from 3 to 5 epochs did not improve the model's performance.
+
+All three seeds produced the same accuracy of 0.633 and macro F1 of 0.259 as the original experiment. The model continued to achieve an F1 score of 0.776 for `question` and 0.000 for both `opinion` and `information`.
+
+These results suggest that additional training duration was insufficient to overcome the model's tendency to predict the majority class.
+
+The experiment helped narrow down the problem by showing that simply training longer was not an effective solution under the current conditions.
+
+A more promising future improvement would be to address class imbalance directly through additional minority-class examples, balanced sampling, or class-weighted training.
 
 ## What's Still Broken
 
 **The gap between what I meant my labels to capture and what the model learned:**
+
+My original goal was to classify r/gaming posts into three meaningful categories: `question`, `opinion`, and `information`.
+
+The `question` category was intended to capture posts seeking answers or assistance, `opinion` was intended to capture personal viewpoints and discussions, and `information` was intended to capture posts primarily sharing facts, news, or updates.
+
+However, the trained model did not learn to reliably distinguish these categories. Instead, it predicted `question` for every example in the test set.
+
+The dataset's uneven distribution likely contributed to this behavior, particularly because `information` represented only 6% of the labeled examples.
+
+The experiment also showed that stable results across random seeds do not necessarily indicate a successful model. Although the model consistently achieved the same accuracy, its performance remained heavily biased toward one category.
+
+Increasing training duration did not resolve this issue. Future improvements should focus on better class representation and training strategies that encourage the model to learn all three categories rather than primarily predicting the majority label.
 
 ---
 
